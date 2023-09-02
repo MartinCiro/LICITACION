@@ -17,7 +17,7 @@ function createRoomElement(habitacion2) {
   nuevoDiv.classList.add(`col-md-12`);
   const opciones = { style: "currency", currency: "COP" };
   const precio = habitacion2.precio_habita.toLocaleString(opciones);
-
+  console.log(habitacion2.tipo_habitacion);
   nuevoDiv.innerHTML = `
         <div class="col-md-12">
             <div class="row">
@@ -26,7 +26,7 @@ function createRoomElement(habitacion2) {
                         <div class="box12">
                             <img src="img/room/room-1.jpg">
                             <div class="box-content">
-                                <h3 class="title">${habitacion2.nom_producto}</h3>
+                                <h3 class="title">${habitacion2.tipo_habitacion}</h3>
                                 <ul class="icon">
                                     <li><a href="#" data-toggle="modal" data-target="#modal-id"><i
                                                 class="fa fa-link"></i></a></li>
@@ -38,7 +38,7 @@ function createRoomElement(habitacion2) {
                 <div class="col-md-6">
                     <div class="room-des">
                         <h3><a href="#" data-toggle="modal"
-                                data-target="#modal-id">${habitacion2.nom_producto}</a></h3>
+                                data-target="#modal-id">Habitacion ${habitacion2.tipo_habitacion}</a></h3>
                         <p>${habitacion2.num_habitacion}</p>
                         <ul class="room-size">
                             <li><i class="fa fa-arrow-right"></i>Tamaño: 260 pies cuadrados </li>

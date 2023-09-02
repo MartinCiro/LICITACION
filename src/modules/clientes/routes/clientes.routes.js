@@ -1,5 +1,5 @@
 const { Router } = require('express');
-//const { isAuthenticatedMW, checkPermissions } = require('../../auth/api/auth.api');
+const { isAuthenticatedMW, checkPermissions } = require('../../auth/api/auth.api');
 
 // api handlers
 const { validarUserApi, crearUserApi, delUserApi, updateUserApi, obtenerProductosApi} = require('../api/clientes.api');
