@@ -18,7 +18,7 @@ const router = Router();
 router.post('/createUser', crearUserApi);
 router.post('/validate', validarUserApi);
 router.delete('/deleteUser', delUserApi);
-router.post('/updateUser', updateUserApi);
+router.put('/updateUser', updateUserApi);
 router.get('/productos', obtenerProductosApi);
 //router.get('/clientes/leerRut', isAuthenticatedMW, checkPermissions([1, 2]), extractRutAPI); //ejm: uso
 module.exports = router;

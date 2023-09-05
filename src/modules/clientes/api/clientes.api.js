@@ -16,6 +16,7 @@ const fnApi = async (req, res, apiFunction) => {
         }
     }
 };
+
 //Inicio CRUD Usuario
 const crearUserApi = (req, res) => {
     const { nombre, num_cedula, pais, departamento, ciudad, pass } = req.body;

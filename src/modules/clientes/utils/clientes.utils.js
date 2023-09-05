@@ -3,102 +3,6 @@ const { getConnection } = require("../../../interface/DBConn.js");
 const config = require("../../../config.js");
 const bcrypt = require("bcryptjs");
 
-const Sequelize = require("sequelize");
-
-// Configuración de Sequelize y conexión a la base de datos
-const sequelize = new Sequelize({
-  dialect: "mysql",
-  host: config.ServerDB,
-  port: config.PortDB,
-  username: config.UserDB,
-  password: config.PasswordBD,
-  database: config.Database,
-});
-
-// Definición de modelos
-const Huesped = sequelize.define(
-  "huesped",
-  {
-    nombre: Sequelize.STRING,
-    num_cedula: {
-      type: Sequelize.INTEGER,
-      unique: true,
-      primaryKey: true,
-    },
-    pais: Sequelize.STRING,
-    departamento: Sequelize.STRING,
-    ciudad: Sequelize.STRING,
-  },
-  {
-    tableName: "huesped", // Indicar el nombre correcto de la tabla
-    timestamps: false, // Deshabilitar los campos createdAt y updatedAt
-  }
-);
-
-const Validacion = sequelize.define(
-  "validacion",
-  {
-    num_cedula: {
-      type: Sequelize.INTEGER,
-      primaryKey: true,
-      autoIncrement: false,
-      unique: true,
-    },
-    pass: Sequelize.STRING,
-  },
-  {
-    tableName: "validacion", // Indicar el nombre correcto de la tabla
-    timestamps: false,
-    createdAt: false, // Deshabilitar campo createdAt
-    updatedAt: false,
-  }
-);
-
-// Relaciones entre modelos
-Huesped.hasOne(Validacion, {
-  foreignKey: "num_cedula",
-  sourceKey: "num_cedula",
-});
-
-// Función para crear un usuario
-async function crearUsuarioU(
-  nombre,
-  num_cedula,
-  pais,
-  departamento,
-  ciudad,
-  pass
-) {
-  try {
-    const hash = await bcrypt.hash(pass, 10);
-
-    //Crear un registro en la tabla Huesped
-    const huesped = await Huesped.create({
-      nombre,
-      num_cedula,
-      pais,
-      departamento,
-      ciudad,
-    });
-
-    // Crear un registro en la tabla Validacion
-    const validacion = await Validacion.create({
-      num_cedula,
-      pass: hash,
-    });
-
-    return { success: true, message: "Usuario creado correctamente" };
-  } catch (error) {
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return {
-        success: false,
-        message:
-          "Ha habido un error en la creacion del usuario, el usuario ya existe",
-      };
-    }
-  }
-}
-
 async function crearUsuarioU(
   nombre,
   num_cedula,
@@ -115,10 +19,9 @@ async function crearUsuarioU(
     const insertQuery = `
             INSERT INTO huesped (
                 nombre, num_cedula, pais, departamento, ciudad)
-            VALUES (?, ?, ?, ?, ?)`; //No se usa RETURNING en MySQL
+            VALUES (?, ?, ?, ?, ?)`;
 
      const result = await pool.query(insertQuery, params);
-     const insertedId = result.insertId; // Obtenemos el ID de la fila recién insertada
 
      const insertValidationQuery = `
          INSERT INTO validacion (num_cedula, pass)
@@ -129,20 +32,12 @@ async function crearUsuarioU(
        hash,
      ]);
 
-     return {
-       id: insertedId,
-       nombre,
-       num_cedula,
-       pais,
-       departamento,
-       ciudad,
+     return {success: true, message: "Usuario registrado correctamente."
      };
    } catch (error) {
+     console.log(error);
      if (error.code === "ER_DUP_ENTRY") {
-       throw new Error("El usuario ya se encuentra registrado");
-     } else {
-       console.error("Error al registrar usuario:", error);
-       throw error;
+       return { success: false, message: "El usuario ya se encuentra registrado."};
      }
    }
  }
@@ -183,47 +78,78 @@ async function validarUserU(num_cedula, pass) {
   }
 }
 
-async function delUserU(num_cedula) {
-  const pool = await getConnection();
+ async function delUserU(num_cedula) {
+   const pool = await getConnection();
+   console.log(num_cedula);
+   try {
+     const tablesToDeleteFrom = [
+       "validacion",
+       "reserva",
+       "ticket",
+       "huesped",
+     ];
+     let recordsDeleted = false;  //Bandera para rastrear si se eliminaron registros
+     for (const tableName of tablesToDeleteFrom) {
+       const deleteQuery = `DELETE FROM ${tableName} WHERE num_cedula = ?`;
+       const result = await pool.query(deleteQuery, [num_cedula]);
 
-  try {
-    const tablesToDeleteFrom = [
-      "facturacion",
-      "validacion",
-      "reserva",
-      "servicios",
-      "pedido",
-      "ticket",
-      "huesped",
-    ];
+       if (result.affectedRows > 0) {
+         recordsDeleted = true;
+       }
+     }
 
-    let recordsDeleted = false; // Bandera para rastrear si se eliminaron registros
+     if (!recordsDeleted) {
+       return { success: false, message: "Registro eliminador correctamente." };
+     }
+   } catch (error) {
+     console.error("Error al eliminar el usuario:", error);
+     return { success: false, message: "No se pudo eliminar el registro." };
+   } finally {
+     pool.end();
+   }
+ }
 
-    for (const tableName of tablesToDeleteFrom) {
-      const deleteQuery = `DELETE FROM ${tableName} WHERE num_cedula = ?`;
-      const result = await pool.query(deleteQuery, [num_cedula]);
+// async function delUserU(num_cedula) {
+//   const pool = await getConnection();
+//   const tablesToDeleteFrom = [
+//     "validacion",
+//     "reserva",
+//     "ticket",
+//     "huesped",
+//   ];
 
-      if (result.affectedRows > 0) {
-        recordsDeleted = true;
-      }
-    }
+//   const results = await Promise.all(
+//     tablesToDeleteFrom.map(async (table) => {
+//       try {
+//         const result = await pool.query(
+//           `
+//             DELETE FROM ${table}
+//             WHERE num_cedula = ?
+//           `,
+//           [num_cedula]
+//         );
 
-    if (recordsDeleted) {
-      return { success: true, message: "Registros eliminados correctamente." };
-    } else {
-      return {
-        success: false,
-        message: "No se encontraron registros para eliminar.",
-      };
-    }
-  } catch (error) {
-    console.error("Error al eliminar el usuario:", error);
-    return { success: false, message: "No se pudo eliminar el registro." };
-  } finally {
-    // Cerrar la conexión aquí, ya sea en caso de éxito o de error
-    pool.end();
-  }
-}
+//         return result.rowCount > 0;
+//       } catch (error) {
+//         console.log(`Error al eliminar de la tabla ${table}:`, error);
+//         throw {
+//           ok: false,
+//           status_cod: 500,
+//           data: `Ocurrió un error al eliminar de la tabla ${table}`,
+//         };
+//       }
+//     })
+//   );
+
+//   const anyTableDeleted = results.some((result) => result);
+
+//   // Finaliza la conexión de la piscina
+//   pool.end();
+
+//   return anyTableDeleted;
+// }
+
+
 async function updateUserU(nombre, num_cedula, pais, departamento, ciudad) {
   const pool = await getConnection();
 
@@ -246,10 +172,8 @@ async function updateUserU(nombre, num_cedula, pais, departamento, ciudad) {
       num_cedula,
     ]);
   } catch (error) {
-    console.error("Error al actualizar el usuario:", error);
-    throw error;
+    throw { success: false, message: "No se puede actualziar el usuario" };;
   } finally {
-    console.log("Cerrando conexión");
     pool.end();
   }
 }
