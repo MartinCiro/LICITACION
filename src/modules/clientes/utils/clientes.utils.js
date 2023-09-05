@@ -201,7 +201,6 @@ async function obtenerProductos() {
     console.error("Error al obtener las habitaciones disponibles:", error);
     throw error;
   } finally {
-    console.log("Cerrando conexión");
     pool.end();
   }
 }

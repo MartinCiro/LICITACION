@@ -24,3 +24,4 @@ router.get('/productos', obtenerProductosApi);
 module.exports = router;
 
 
+//https://co.hoteles.com/Hotel-Search?adults=null&children=null&destination=Cartagena%2C%20Bol%C3%ADvar%2C%20Colombia&endDate=2023-09-10&regionId=6140796&selected=1378320&semdtl=&sort=RECOMMENDED&startDate=2023-09-08&theme=&useRewards=false&userIntent=
